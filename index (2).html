@@ -1,0 +1,889 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Alolan Athlete</title>
+<style>
+:root{--bg:#10202b;--panel:#1a3140;--ink:#f3f0e8;--muted:#9fb3bf;--accent:#ffcf4a;--pick:#3ecf8e}
+*{box-sizing:border-box}
+body{margin:0;font:16px/1.4 system-ui,-apple-system,sans-serif;background:var(--bg);color:var(--ink)}
+header{display:flex;align-items:center;gap:12px;padding:10px 18px;background:#0b1720}
+header h1{font-size:20px;margin:0;flex:1}
+button{font:inherit;border:0;border-radius:8px;padding:8px 14px;background:#2d5266;color:var(--ink);cursor:pointer}
+button:hover{background:#3a6780}
+button.primary{background:var(--accent);color:#222;font-weight:600}
+button:disabled{opacity:.4;cursor:default}
+main{padding:18px;max-width:1400px;margin:auto}
+.panel{background:var(--panel);border-radius:12px;padding:16px 18px;margin-bottom:16px}
+.muted{color:var(--muted)}
+input[type=text]{font:inherit;padding:6px 8px;border-radius:6px;border:1px solid #446;background:#0f2633;color:var(--ink);width:150px}
+select{font:inherit;padding:5px;border-radius:6px}
+.row{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.players{display:flex;flex-wrap:wrap;gap:10px;margin-top:10px}
+.order{display:flex;flex-wrap:wrap;gap:6px;margin:6px 0 2px}
+.chip{padding:4px 10px;border-radius:20px;background:#244454;font-size:14px}
+.chip.done{opacity:.35;text-decoration:line-through}
+.chip.now{background:var(--accent);color:#222;font-weight:700}
+.banner{font-size:26px;font-weight:700;margin:4px 0 12px}
+.banner span{color:var(--accent)}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(var(--cw,190px),1fr));gap:14px}
+.card{position:relative;background:#0f2633;border-radius:10px;padding:6px;text-align:center;cursor:pointer;transition:transform .1s}
+.card:hover{transform:translateY(-3px);outline:3px solid var(--accent)}
+.card img{width:100%;display:block;border-radius:6px}
+.card .nm{font-size:14px;margin-top:4px}
+.card.taken{cursor:default;opacity:.35;transform:none;outline:none}
+.card .who{position:absolute;inset:auto 6px 30px 6px;background:var(--pick);color:#06281a;font-weight:700;border-radius:6px;padding:3px}
+.teams{--tw:calc(var(--cw,190px)*.55);display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,calc(var(--tw)*4 + 70px)),1fr));gap:14px}
+#finalTeams{--tw:var(--cw,190px)}
+.team h3{margin:0 0 8px}
+.team .mini{display:grid;grid-template-columns:repeat(4,minmax(0,var(--tw)));gap:8px}
+.team .mini figure{margin:0;text-align:center;font-size:14px}
+.team .mini img{width:100%;border-radius:4px}
+.team .slot{aspect-ratio:5/7;border:2px dashed #3b5a6a;border-radius:6px}
+textarea{width:100%;height:150px;font:13px ui-monospace,monospace;background:#0f2633;color:var(--ink);border-radius:8px;border:1px solid #446;padding:8px}
+.hide{display:none!important}
+body.share .hostonly{display:none!important}
+dialog{background:var(--panel);color:var(--ink);border:0;border-radius:12px;max-width:520px}
+.dice{display:flex;flex-wrap:wrap;gap:10px;margin:10px 0}
+.die{background:#0f2633;border-radius:8px;padding:8px 12px;text-align:center}
+.die b{font-size:28px;display:block}
+#game{max-width:none}
+.gwrap{display:grid;grid-template-columns:minmax(0,1fr) 340px;gap:16px;align-items:start}
+@media(max-width:900px){.gwrap{grid-template-columns:1fr}}
+.lineup{display:flex;flex-wrap:wrap;gap:12px;margin-bottom:12px}
+.lineup figure{margin:0;background:var(--panel);border-radius:10px;padding:6px;text-align:center;width:var(--lw,150px);cursor:zoom-in}
+.lineup img{width:100%;border-radius:6px;display:block}
+.lineup figcaption{font-size:13px;margin-top:4px}
+.lineup figcaption b{display:block;font-size:14px}
+#boardWrap{position:relative;background:#0b1720;border-radius:12px;overflow:hidden;user-select:none;touch-action:none;min-height:300px}
+#boardImg{width:100%;display:block;pointer-events:none}
+#boardEmpty{padding:60px 20px;text-align:center}
+.tok{position:absolute;width:var(--tk,56px);transform:translate(-50%,-50%);cursor:grab;text-align:center;z-index:2}
+.tok.drag{cursor:grabbing;z-index:5}
+.tok img{width:100%;aspect-ratio:1;object-fit:cover;border-radius:50%;border:3px solid var(--pc);display:block;background:#fff;transition:transform .15s}
+.tok.faint img{transform:rotate(90deg);filter:grayscale(.6)}
+.tok span{display:inline-block;margin-top:2px;font-size:11px;font-weight:700;background:var(--pc);color:#111;border-radius:6px;padding:1px 5px;white-space:nowrap}
+.side .panel{padding:12px 14px;margin-bottom:12px}
+.side h3{margin:0 0 8px;font-size:16px}
+.lrow{display:flex;gap:8px;align-items:center;margin:6px 0}
+.lrow .pn{width:90px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.lrow select{flex:1;min-width:0}
+.bigdie{font-size:84px;line-height:1;text-align:center;margin:4px 0}
+#rollLog{font-size:13px;max-height:110px;overflow:auto}
+.score{display:flex;align-items:center;gap:8px;margin:5px 0}
+.score .pn{flex:1;font-weight:600}
+.score b{width:34px;text-align:center;font-size:20px}
+.score button{padding:2px 10px}
+.dot{display:inline-block;width:11px;height:11px;border-radius:50%;background:var(--pc);margin-right:6px}
+#zoom{position:fixed;inset:0;background:rgba(0,0,0,.85);display:flex;align-items:center;justify-content:center;z-index:50;cursor:zoom-out}
+#zoom img{max-height:92vh;max-width:92vw;border-radius:12px}
+.tabs{display:flex;gap:4px;margin-right:auto}.tabs button{background:#1d3746;border-radius:8px 8px 0 0;padding:8px 18px}.tabs button.on{background:var(--accent);color:#222;font-weight:700}
+.rules-note{background:#0f2633;border-left:4px solid var(--accent);border-radius:6px;padding:8px 10px;font-size:14px;margin-bottom:10px}.rules-note table{border-collapse:collapse;margin-top:6px;font-size:13px}.rules-note td,.rules-note th{padding:2px 8px;text-align:center}.rules-note tr.cur{background:var(--accent);color:#222;font-weight:700}
+.score{flex-wrap:wrap}.score .aw{display:flex;gap:4px;width:100%;padding-left:17px}.score .aw button{font-size:12px;padding:3px 8px}
+#roomPanel{position:fixed;top:56px;right:14px;width:340px;z-index:40;box-shadow:0 10px 30px rgba(0,0,0,.5)}
+#roomPanel input[type=text]{width:100%}
+.seatBtns{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+.seatBtns button{font-size:17px;padding:12px 18px}
+.pcard{cursor:pointer}
+.pcard.off{cursor:default}
+.rdy{display:flex;flex-wrap:wrap;gap:6px;margin:6px 0}
+.mytok img{box-shadow:0 0 0 3px #fff}
+.ggrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(var(--gw,190px),1fr));gap:14px}
+.gcard{margin:0;background:var(--panel);border-radius:10px;padding:8px}
+.gcard img{width:100%;border-radius:6px;display:block;cursor:zoom-in}
+.gcard figcaption{font-size:14px;margin-top:6px}
+.gcard figcaption div{display:flex;flex-wrap:wrap;gap:4px;margin:4px 0}
+.gcard textarea{height:64px;font:13px system-ui,sans-serif}
+.gnote{font-size:13px;background:#0f2633;border-radius:6px;padding:5px 7px;margin-top:4px;white-space:pre-wrap;text-align:left}
+.lineup .lnote{font-size:12px;color:var(--accent);margin-top:3px;white-space:pre-wrap;text-align:left}
+.ptabs{display:flex;gap:4px;margin-left:16px}
+</style>
+</head>
+<body>
+<header>
+  <h1 style="flex:0 0 auto;margin-right:16px">Alolan Athlete</h1>
+  <nav class="tabs"><button id="tabDraft" class="on">1 · Draft</button><button id="tabPlay" disabled title="Finish the draft first">2 · Play</button><button id="tabCards" disabled title="Load cards first">3 · Cards</button></nav>
+  <label id="sizeBox" class="hostonly hide">Card size <input type="range" id="size" min="100" max="420" value="190"></label>
+  <button id="roomBtn" title="Let friends join from their own browser">🌐 Online room</button>
+  <button id="shareBtn" class="hostonly" title="Hide setup controls for screen sharing">Clean view for sharing</button>
+  <button id="unshareBtn" class="hide">Show controls</button>
+</header>
+<main>
+<div id="draftTab">
+
+<!-- SETUP -->
+<section id="setup" class="panel hostonly">
+  <p class="muted" style="float:right;margin:0"><a href="?play" style="color:var(--accent)">Joining a friend's game? →</a></p>
+  <h2 style="margin-top:0">1. Load racer cards</h2>
+  <p class="muted">Select all your racer card images (⌘A in the file picker). Each card's name comes from its file name, so <i>Dugtrio.png</i> shows as "Dugtrio". Nothing is uploaded; everything stays on your Mac.</p>
+  <div class="row">
+    <input type="file" id="files" accept="image/*" multiple>
+    <span id="loaded" class="muted">No cards loaded.</span>
+  </div>
+  <p id="hostedInfo" class="muted" style="font-size:13px;margin:6px 0 0"></p>
+
+  <h2>2. Players</h2>
+  <div class="row">
+    <label>Number of players
+      <select id="pc"><option>2</option><option>3</option><option selected>4</option><option>5</option><option>6</option></select>
+    </label>
+    <span class="muted">List them in seating (clockwise) order.</span>
+  </div>
+  <div class="players" id="names"></div>
+
+  <h2>3. Who picks first?</h2>
+  <div class="row">
+    <button id="rollBtn">Roll off (highest picks first)</button>
+    <label>or choose: <select id="firstSel"></select></label>
+  </div>
+  <div id="rollOut"></div>
+
+  <p style="margin-top:18px"><button id="startBtn" class="primary" disabled>Start draft</button>
+  <span id="startHint" class="muted"></span></p>
+</section>
+
+<!-- DRAFT -->
+<section id="draft" class="hide">
+  <div class="panel">
+    <div class="banner" id="banner"></div>
+    <div class="muted" id="roundInfo"></div>
+    <div class="order" id="order"></div>
+    <div class="row" style="margin-top:10px">
+      <button id="undoBtn">Undo last pick</button>
+      <button id="randomBtn" title="Pick a random remaining card for the current player">Random pick</button>
+      <button id="restartBtn" class="hostonly">Start over</button>
+    </div>
+  </div>
+  <div class="grid" id="pool"></div>
+  <h2 style="margin-top:24px">Teams</h2>
+  <div class="teams" id="teams"></div>
+</section>
+
+<!-- RESULTS -->
+<section id="results" class="hide">
+  <div class="panel">
+    <div class="banner">Draft complete! 🏁</div>
+    <p class="muted">Each player now has 4 racers. Before each race, everyone secretly picks one and reveals it at the same time.</p>
+    <button class="primary" id="playBtn">Go to the Play tab ▶</button>
+  </div>
+  <div class="teams" id="finalTeams"></div>
+  <div class="panel hostonly" style="margin-top:16px">
+    <h3 style="margin-top:0">Racer tokens to upload to Owlbear</h3>
+    <p class="muted">Only these racers are in play, so you can skip the other tokens.</p>
+    <textarea id="uploadList" readonly></textarea>
+    <p><button id="copyBtn">Copy list</button> <span id="copied" class="muted"></span>
+    <button id="restart2">New draft (same cards)</button></p>
+  </div>
+</section>
+</div>
+<div id="cardsTab" class="hide">
+  <div class="panel row">
+    <input type="text" id="gSearch" placeholder="Search name or note…" style="width:220px">
+    <select id="gFilter"><option value="all">All cards</option></select>
+    <label class="muted">Size <input type="range" id="gSize" min="120" max="360" value="190"></label>
+    <span id="gCount" class="muted"></span>
+  </div>
+  <p class="muted" style="margin:-6px 0 12px;font-size:13px">Notes save in this browser and show live to everyone in the online room, plus under racing cards on the Play tab. Click a card to enlarge it.</p>
+  <div class="ggrid" id="gGrid"></div>
+</div>
+<div id="playTab" class="hide">
+<!-- GAME -->
+<section id="game">
+  <div class="gwrap">
+    <div>
+      <div class="lineup" id="lineup"></div>
+      <div id="boardWrap">
+        <div id="boardEmpty" class="muted">Load your board images in the panel on the right →</div>
+        <img id="boardImg" class="hide" alt="">
+        <div id="tokLayer"></div>
+      </div>
+      <p class="muted hostonly" style="font-size:13px">Drag tokens to move them. Double-click a token to faint it (it turns sideways) or recover it.</p>
+    </div>
+    <div class="side">
+      <div class="panel">
+        <div class="banner" id="raceTitle" style="font-size:22px;margin:0 0 6px"></div>
+        <div class="muted" id="raceBoardName"></div>
+        <div class="hostonly" style="margin-top:8px">
+          <div class="lrow"><span class="pn">Board</span><select id="boardSel"></select></div>
+          <div class="lrow"><span class="pn">Boards</span><input type="file" id="boardFiles" accept="image/*" multiple style="width:100%"></div>
+          <div class="lrow"><span class="pn">Tokens</span><input type="file" id="tokFiles" accept="image/*" multiple style="width:100%"></div>
+          <div class="lrow"><span class="pn">Token size</span><input type="range" id="tokSize" min="24" max="140" value="56" style="flex:1"></div>
+          <div class="lrow"><span class="pn">Card size</span><input type="range" id="lineSize" min="90" max="320" value="150" style="flex:1"></div>
+          <p class="muted" style="font-size:12px;margin:4px 0 0" id="tokInfo">Token files are matched to racers by file name. Racers without a token file use their card art.</p>
+        </div>
+      </div>
+
+      <div class="panel" id="pickPanel">
+        <h3>Choose racers for this race</h3><p class="muted" style="font-size:12px;margin:0 0 6px">Picks show only as "✓ Ready" until you reveal, so they stay secret on a shared screen. Tip: have friends message you their pick privately.</p>
+        <div id="pickRows"></div>
+        <button class="primary" id="revealBtn" style="margin-top:8px">Reveal all &amp; place on board</button>
+        <button id="randPickBtn" style="margin-top:8px">Random for empty</button>
+      </div>
+
+      <div class="panel">
+        <h3>Turn</h3>
+        <div class="order" id="turnOrder"></div>
+        <div class="row" style="margin-top:8px">
+          <button class="primary" id="nextTurnBtn">Next turn ▶</button>
+          <label>First: <select id="startSel"></select></label>
+        </div>
+      </div>
+
+      <div class="panel" style="text-align:center">
+        <h3 style="text-align:left">D6</h3>
+        <div class="bigdie" id="dieFace">⚀</div>
+        <button class="primary" id="rollDieBtn" style="font-size:18px;padding:10px 26px">Roll</button>
+        <div id="rollLog" class="muted" style="text-align:left;margin-top:8px"></div>
+      </div>
+
+      <div class="panel">
+        <h3>Points</h3>
+        <div id="scoreNote" class="rules-note"></div>
+        <div id="scores"></div>
+      </div>
+
+      <div class="panel">
+        <button id="endRaceBtn">End race</button>
+        <p class="muted" style="font-size:12px;margin:6px 0 0">Racers used this race can't be picked again. The next race's "First" defaults to the player you choose.</p>
+      </div>
+    </div>
+  </div>
+</section>
+</div>
+</main>
+<div id="zoom" class="hide"></div>
+<!-- ONLINE ROOM (host) -->
+<div id="roomPanel" class="panel hide">
+  <h3 style="margin-top:0">🌐 Online room</h3>
+  <div id="roomBody"></div>
+</div>
+
+<!-- PLAYER APP (friends) -->
+<div id="pApp" class="hide">
+  <header><h1 style="flex:0 0 auto">Alolan Athlete</h1><nav class="tabs ptabs hide" id="pTabs"><button id="pTabGame" class="on">Game</button><button id="pTabCards">Cards</button></nav><span style="flex:1"></span><span id="pWho" class="muted"></span>
+    <label class="muted" style="font-size:13px">Card size <input type="range" id="pSize" min="90" max="320" value="150"></label></header>
+  <main id="pMain"></main>
+</div>
+
+
+<script>
+const $=id=>document.getElementById(id);
+let cards=[];          // {name, url}
+let players=[];        // names
+let first=null;        // index of first picker
+let st=null;           // draft state
+
+// ---------- setup ----------
+function renderNameInputs(){
+  const n=+$('pc').value, box=$('names'), old=[...box.querySelectorAll('input')].map(i=>i.value);
+  box.innerHTML='';
+  for(let i=0;i<n;i++){
+    const inp=document.createElement('input');inp.type='text';
+    inp.value=old[i]||('Player '+(i+1));inp.oninput=syncPlayers;box.append(inp);
+  }
+  syncPlayers();
+}
+function syncPlayers(){
+  setTimeout(sync,0);
+  players=[...$('names').querySelectorAll('input')].map((i,k)=>i.value.trim()||('Player '+(k+1)));
+  const sel=$('firstSel'),cur=sel.value;
+  sel.innerHTML='<option value="">—</option>'+players.map((p,i)=>`<option value="${i}">${esc(p)}</option>`).join('');
+  if(cur!==''&&+cur<players.length){sel.value=cur}else{first=null}
+  updateStart();
+}
+function updateStart(){
+  const need=4*players.length, ok=cards.length>=need && first!==null;
+  $('startBtn').disabled=!ok;
+  $('startHint').textContent= cards.length<need ? `Need at least ${need} cards for ${players.length} players (loaded ${cards.length}).`
+    : first===null ? 'Roll off or choose who picks first.' : `${players[first]} picks first.`;
+}
+$('pc').onchange=renderNameInputs;
+$('firstSel').onchange=e=>{first=e.target.value===''?null:+e.target.value;$('rollOut').innerHTML='';updateStart()};
+$('files').onchange=e=>{
+  cards.forEach(c=>URL.revokeObjectURL(c.url));
+  cards=[...e.target.files].filter(f=>f.type.startsWith('image/'))
+    .map(f=>({name:f.name.replace(/\.[^.]+$/,'').replace(/[_]+/g,' ').trim(),url:URL.createObjectURL(f),file:f}))
+    .sort((a,b)=>a.name.localeCompare(b.name));NET.ver.c++;
+  $('loaded').textContent=cards.length+' cards loaded.';$('tabCards').disabled=!cards.length;
+  updateStart();
+};
+$('rollBtn').onclick=()=>{
+  // roll for everyone; reroll tied players at the top until one leader
+  let contenders=players.map((_,i)=>i), log=[];
+  while(true){
+    const rolls=contenders.map(i=>({i,r:1+Math.floor(Math.random()*6)}));
+    log.push(rolls);
+    const max=Math.max(...rolls.map(x=>x.r));
+    const top=rolls.filter(x=>x.r===max).map(x=>x.i);
+    if(top.length===1){first=top[0];break}
+    contenders=top;
+  }
+  $('rollOut').innerHTML=log.map((rolls,k)=>`<div class="muted">${k?'Tie, reroll:':'Rolls:'}</div><div class="dice">`+
+    rolls.map(x=>`<div class="die"><b>${x.r}</b>${esc(players[x.i])}</div>`).join('')+'</div>').join('')+
+    `<p><b>${esc(players[first])}</b> picks first.</p>`;
+  $('firstSel').value=first;updateStart();
+};
+
+// ---------- draft ----------
+function shuffle(a){a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a}
+function snake(start,n){ // each player picks twice: start..clockwise, then back
+  const fwd=[...Array(n)].map((_,k)=>(start+k)%n);
+  return fwd.concat(fwd.slice().reverse());
+}
+function startDraft(){
+  const n=players.length, deck=shuffle(cards.map((_,i)=>i));
+  st={round:1,deck,pool:deck.slice(0,2*n),rest:deck.slice(2*n),
+      order:snake(first,n),turn:0,teams:players.map(()=>[]),taken:{},history:[]};
+  $('setup').classList.add('hide');$('results').classList.add('hide');$('draft').classList.remove('hide');$('sizeBox').classList.remove('hide');
+  render();
+}
+function nextRound(){
+  const n=players.length;
+  st.round=2;st.pool=st.rest.slice(0,2*n);st.rest=st.rest.slice(2*n);
+  st.order=snake((first+1)%n,n);st.turn=0;st.taken={};
+}
+function pick(ci){
+  if(st.taken[ci]!==undefined)return;
+  const p=st.order[st.turn];
+  st.history.push(JSON.stringify({round:st.round,pool:st.pool,rest:st.rest,order:st.order,turn:st.turn,teams:st.teams,taken:st.taken}));
+  st.teams[p].push(ci);st.taken[ci]=p;st.turn++;
+  if(st.turn>=st.order.length){
+    if(st.round===1){nextRound()}else{return finish()}
+  }
+  render();
+}
+$('undoBtn').onclick=()=>{
+  if(!st.history.length)return;
+  Object.assign(st,JSON.parse(st.history.pop()));
+  if(g){return} // draft is locked once the game has started
+  $('tabPlay').disabled=true;$('results').classList.add('hide');$('draft').classList.remove('hide');render();
+};
+$('randomBtn').onclick=()=>{
+  const free=st.pool.filter(ci=>st.taken[ci]===undefined);
+  if(free.length)pick(free[Math.floor(Math.random()*free.length)]);
+};
+$('size').oninput=e=>document.documentElement.style.setProperty('--cw',e.target.value+'px');
+$('restartBtn').onclick=()=>{ if(confirmInline('restartBtn')) backToSetup() };
+$('restart2').onclick=backToSetup;
+function backToSetup(){st=null;g=null;$('tabPlay').disabled=true;$('tabPlay').title='Finish the draft first';$('sizeBox').classList.add('hide');$('draft').classList.add('hide');$('results').classList.add('hide');$('setup').classList.remove('hide');document.body.classList.remove('share');toggleShareBtns()}
+// two-click confirm (no browser dialogs)
+function confirmInline(id){
+  const b=$(id);
+  if(b.dataset.armed){delete b.dataset.armed;b.textContent='Start over';return true}
+  b.dataset.armed=1;b.textContent='Click again to confirm';
+  setTimeout(()=>{if(b.dataset.armed){delete b.dataset.armed;b.textContent='Start over'}},3000);
+  return false;
+}
+
+function render(){
+  const p=st.order[st.turn];
+  $('banner').innerHTML=`<span>${esc(players[p])}</span>, pick a racer!`;
+  $('roundInfo').textContent=`Draft ${st.round} of 2 · pick ${st.turn+1} of ${st.order.length} · snake order:`;
+  $('order').innerHTML=st.order.map((pi,k)=>`<span class="chip ${k<st.turn?'done':k===st.turn?'now':''}">${esc(players[pi])}</span>`).join('');
+  $('pool').innerHTML='';
+  st.pool.forEach(ci=>{
+    const c=cards[ci],d=document.createElement('div'),t=st.taken[ci];
+    d.className='card'+(t!==undefined?' taken':'');
+    d.innerHTML=`<img src="${c.url}" alt=""><div class="nm">${esc(c.name)}</div>`+(t!==undefined?`<div class="who">${esc(players[t])}</div>`:'');
+    if(t===undefined)d.onclick=()=>pick(ci);
+    $('pool').append(d);
+  });
+  renderTeams($('teams'),p);sync();
+}
+function renderTeams(box,active){
+  box.innerHTML=players.map((name,i)=>{
+    const mine=st.teams[i];
+    const slots=[0,1,2,3].map(k=>mine[k]!==undefined
+      ?`<figure><img src="${cards[mine[k]].url}" alt=""><figcaption>${esc(cards[mine[k]].name)}</figcaption></figure>`
+      :'<div class="slot"></div>').join('');
+    return `<div class="panel team" style="${i===active?'outline:3px solid var(--accent)':''}"><h3>${esc(name)}</h3><div class="mini">${slots}</div></div>`;
+  }).join('');
+}
+function finish(){
+  setTimeout(sync,0);
+  $('tabPlay').disabled=false;$('tabPlay').title='';
+  $('draft').classList.add('hide');$('results').classList.remove('hide');
+  renderTeams($('finalTeams'),-1);
+  $('uploadList').value=players.map((name,i)=>name+': '+st.teams[i].map(ci=>cards[ci].name).join(', ')).join('\n')
+    +'\n\nAll tokens needed ('+players.length*4+'):\n'+st.teams.flat().map(ci=>cards[ci].name).sort().join('\n');
+}
+$('copyBtn').onclick=async()=>{
+  try{await navigator.clipboard.writeText($('uploadList').value);$('copied').textContent='Copied!'}
+  catch(e){$('uploadList').select();$('copied').textContent='Press ⌘C to copy.'}
+};
+
+// ---------- share mode ----------
+function toggleShareBtns(){const s=document.body.classList.contains('share');$('shareBtn').classList.toggle('hide',s);$('unshareBtn').classList.toggle('hide',!s)}
+$('shareBtn').onclick=()=>{document.body.classList.add('share');toggleShareBtns()};
+$('unshareBtn').onclick=()=>{document.body.classList.remove('share');toggleShareBtns()};
+
+function esc(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+// ================= GAME =================
+const COLORS=['#ff6b6b','#4dabf7','#ffd43b','#69db7c','#da77f2','#ffa94d'];
+const DIE=['⚀','⚁','⚂','⚃','⚄','⚅'];
+const POINTS=[[3,1],[4,2],[4,2],[5,3]]; // [1st, 2nd] for races 1-4
+let g=null, boards=[], tokFiles={};
+const norm=s=>String(s).toLowerCase().replace(/[^a-z0-9]/g,'');
+
+function startGame(){
+  if(g)return showTab('play');
+  g={race:1,used:players.map(()=>[]),lineup:players.map(()=>null),revealed:false,
+     tokens:[],start:first,turn:0,scores:players.map(()=>0),log:[],boardIdx:0};
+  showTab('play');
+}
+function showTab(t){
+  const tabs={draft:'draftTab',play:'playTab',cards:'cardsTab'},btn={draft:'tabDraft',play:'tabPlay',cards:'tabCards'};
+  for(const k in tabs){$(tabs[k]).classList.toggle('hide',k!==t);$(btn[k]).classList.toggle('on',k===t)}
+  $('sizeBox').classList.toggle('hide',t!=='draft'||!st);
+  if(t==='play')renderGame();
+  if(t==='cards')renderCards();
+}
+$('tabDraft').onclick=()=>showTab('draft');
+$('tabPlay').onclick=startGame;
+function turnOrder(){const n=players.length;return [...Array(n)].map((_,k)=>(g.start+k)%n)}
+function cardFor(ci){return cards[ci]}
+function tokenUrl(ci){return (tokFiles[norm(cards[ci].name)]||cards[ci]).url}
+
+function renderGame(){
+  const n=players.length;
+  $('raceTitle').textContent=g.race<=4?`Race ${g.race} of 4`:'Game over';
+  // board
+  $('boardSel').innerHTML=boards.map((b,i)=>`<option value="${i}">${esc(b.name)}</option>`).join('');
+  if(boards.length){$('boardSel').value=g.boardIdx;$('boardImg').src=boards[g.boardIdx].url;$('boardImg').classList.remove('hide');$('boardEmpty').classList.add('hide');$('raceBoardName').textContent=boards[g.boardIdx].name}
+  else{$('raceBoardName').textContent=''}
+  // pick rows
+  $('pickPanel').classList.toggle('hide',g.revealed||g.race>4);
+  if(!g.revealed){
+    $('pickRows').innerHTML=players.map((p,i)=>{
+      const opts=st.teams[i].filter(ci=>!g.used[i].includes(ci));
+      const head=`<div class="lrow"><span class="pn" style="--pc:${COLORS[i]}"><span class="dot"></span>${esc(p)}</span>`;
+      if(g.lineup[i]!=null&&g.editing!==i) return head+`<span style="flex:1;color:var(--pick);font-weight:700">✓ Ready</span><button data-edit="${i}">Change</button></div>`;
+      return head+`<select data-p="${i}"><option value="">— pick —</option>`+
+        opts.map(ci=>`<option value="${ci}" ${g.lineup[i]===ci?'selected':''}>${esc(cards[ci].name)}</option>`).join('')+'</select></div>';
+    }).join('');
+    $('pickRows').querySelectorAll('select').forEach(s=>s.onchange=e=>{g.lineup[+s.dataset.p]=s.value===''?null:+s.value;g.editing=null;renderGame()});
+    $('pickRows').querySelectorAll('[data-edit]').forEach(b=>b.onclick=()=>{g.editing=+b.dataset.edit;renderGame()});
+  }
+  // lineup strip (only after reveal, so picks stay secret)
+  $('lineup').innerHTML=g.revealed?players.map((p,i)=>{
+    const ci=g.lineup[i];if(ci==null)return'';
+    return `<figure style="--pc:${COLORS[i]};border-top:4px solid ${COLORS[i]}" data-ci="${ci}"><img src="${cards[ci].url}" alt=""><figcaption><b>${esc(p)}</b>${esc(cards[ci].name)}${NOTES[cards[ci].name]?`<div class="lnote">📝 ${esc(NOTES[cards[ci].name])}</div>`:''}</figcaption></figure>`;
+  }).join(''):(g.race<=4?'<div class="muted">Racers are hidden until everyone has picked and you press Reveal.</div>':'');
+  $('lineup').querySelectorAll('figure').forEach(f=>f.onclick=()=>zoom(cards[+f.dataset.ci].url));
+  // turn
+  const ord=turnOrder();
+  $('turnOrder').innerHTML=ord.map((pi,k)=>`<span class="chip ${k===g.turn?'now':''}" style="${k===g.turn?'':'border-left:5px solid '+COLORS[pi]}">${esc(players[pi])}</span>`).join('');
+  $('startSel').innerHTML=players.map((p,i)=>`<option value="${i}">${esc(p)}</option>`).join('');$('startSel').value=g.start;
+  // scores
+  const pts=POINTS[g.race-1];
+  $('scoreNote').innerHTML=(pts?`<b>Race ${g.race} scoring:</b> 🥇 1st place = <b>${pts[0]}</b> pts · 🥈 2nd place = <b>${pts[1]}</b> pts · ⚡ each Z Crystal space landed on = <b>+1</b>`:'<b>Game over.</b> Highest total wins; a tie is a shared win.')+
+    '<table><tr><th>Race</th><th>1st</th><th>2nd</th></tr>'+POINTS.map((r,k)=>`<tr class="${k===g.race-1?'cur':''}"><td>${k+1}</td><td>${r[0]}</td><td>${r[1]}</td></tr>`).join('')+'</table>';
+  $('scores').innerHTML=players.map((p,i)=>`<div class="score" style="--pc:${COLORS[i]}"><span class="pn"><span class="dot"></span>${esc(p)}</span><button data-d="-1" data-p="${i}">−</button><b>${g.scores[i]}</b><button data-d="1" data-p="${i}">+</button>`+
+    (pts&&g.revealed?`<div class="aw"><button data-d="${pts[0]}" data-p="${i}" data-why="1st place">🥇 1st +${pts[0]}</button><button data-d="${pts[1]}" data-p="${i}" data-why="2nd place">🥈 2nd +${pts[1]}</button><button data-d="1" data-p="${i}" data-why="Z Crystal">⚡ Z +1</button></div>`:'')+'</div>').join('');
+  $('scores').querySelectorAll('button').forEach(b=>b.onclick=()=>{const i=+b.dataset.p,d=+b.dataset.d;g.scores[i]+=d;
+    if(b.dataset.why)g.log.push(`${esc(players[i])} +${d} (${b.dataset.why})`);renderGame()});
+  if(g.race>4){
+    const best=Math.max(...g.scores),win=players.filter((_,i)=>g.scores[i]===best);
+    $('lineup').innerHTML=`<div class="banner">🏆 ${win.map(esc).join(' &amp; ')} win${win.length>1?'':'s'} with ${best} points!</div>`;
+  }
+  $('rollLog').innerHTML=g.log.slice(-8).reverse().map(l=>`<div>${l}</div>`).join('');
+  $('endRaceBtn').disabled=!g.revealed;
+  renderTokens();sync();
+}
+function renderTokens(){
+  const L=$('tokLayer');L.innerHTML='';
+  g.tokens.forEach((t,k)=>{
+    const d=document.createElement('div');d.className='tok'+(t.faint?' faint':'');
+    d.style.left=t.x+'%';d.style.top=t.y+'%';d.style.setProperty('--pc',COLORS[t.p]);
+    d.innerHTML=`<img src="${tokenUrl(t.ci)}" alt="" draggable="false"><span>${esc(players[t.p])}</span>`;
+    d.ondblclick=()=>{t.faint=!t.faint;d.classList.toggle('faint',t.faint);sync()};
+    d.onpointerdown=e=>{
+      e.preventDefault();d.setPointerCapture(e.pointerId);d.classList.add('drag');
+      const r=$('boardWrap').getBoundingClientRect();
+      d.onpointermove=ev=>{t.x=Math.min(100,Math.max(0,(ev.clientX-r.left)/r.width*100));t.y=Math.min(100,Math.max(0,(ev.clientY-r.top)/r.height*100));d.style.left=t.x+'%';d.style.top=t.y+'%';sync()};
+      d.onpointerup=()=>{d.classList.remove('drag');d.onpointermove=null;d.onpointerup=null};
+    };
+    L.append(d);
+  });
+}
+$('revealBtn').onclick=()=>{
+  if(g.lineup.some(x=>x==null)){$('revealBtn').textContent='Everyone needs a racer first';setTimeout(()=>$('revealBtn').textContent='Reveal all & place on board',1800);return}
+  g.revealed=true;g.turn=0;
+  g.tokens=g.lineup.map((ci,p)=>({ci,p,x:8+p*7,y:10,faint:false}));
+  g.log.push(`<b>Race ${g.race}</b> begins`);
+  renderGame();
+};
+$('randPickBtn').onclick=()=>{
+  players.forEach((_,i)=>{if(g.lineup[i]==null){const o=st.teams[i].filter(ci=>!g.used[i].includes(ci));g.lineup[i]=o[Math.floor(Math.random()*o.length)]}});
+  renderGame();
+};
+$('nextTurnBtn').onclick=()=>{g.turn=(g.turn+1)%players.length;renderGame()};
+$('startSel').onchange=e=>{g.start=+e.target.value;g.turn=0;renderGame()};
+$('rollDieBtn').onclick=()=>doRoll();
+function doRoll(){
+  const b=$('rollDieBtn');if(b.disabled||!g)return;b.disabled=true;
+  let k=0;const final=1+Math.floor(Math.random()*6);
+  const who=players[turnOrder()[g.turn]];
+  const iv=setInterval(()=>{$('dieFace').textContent=DIE[Math.floor(Math.random()*6)];if(++k>=10){clearInterval(iv);
+    $('dieFace').textContent=DIE[final-1];b.disabled=false;
+    g.log.push(`${esc(who)} rolled <b>${final}</b>`);g.die={face:final,n:(g.die?g.die.n:0)+1};
+    $('rollLog').innerHTML=g.log.slice(-8).reverse().map(l=>`<div>${l}</div>`).join('');sync();}},60);
+}
+$('endRaceBtn').onclick=()=>{
+  const b=$('endRaceBtn');
+  if(!b.dataset.armed){b.dataset.armed=1;b.textContent='Click again to end race';setTimeout(()=>{delete b.dataset.armed;b.textContent='End race'},3000);return}
+  delete b.dataset.armed;b.textContent='End race';
+  g.lineup.forEach((ci,i)=>g.used[i].push(ci));
+  g.log.push(`<b>Race ${g.race}</b> ended`);
+  g.race++;g.revealed=false;g.lineup=players.map(()=>null);g.tokens=[];g.turn=0;
+  if(boards.length>1&&g.race<=4)g.boardIdx=Math.min(boards.length-1,g.race-1);
+  renderGame();
+};
+$('boardFiles').onchange=e=>{
+  boards.forEach(b=>URL.revokeObjectURL(b.url));
+  boards=[...e.target.files].filter(f=>f.type.startsWith('image/')).sort((a,b)=>a.name.localeCompare(b.name,undefined,{numeric:true}))
+    .map(f=>({name:f.name.replace(/\.[^.]+$/,''),url:URL.createObjectURL(f),file:f}));NET.ver.b++;
+  g.boardIdx=Math.min(boards.length-1,Math.max(0,g.race-1));renderGame();
+};
+$('boardSel').onchange=e=>{g.boardIdx=+e.target.value;renderGame()};
+$('tokFiles').onchange=e=>{setTimeout(sync,0);
+  Object.values(tokFiles).forEach(u=>URL.revokeObjectURL(u.url));tokFiles={};NET.ver.t++;
+  [...e.target.files].filter(f=>f.type.startsWith('image/')).forEach(f=>tokFiles[norm(f.name.replace(/\.[^.]+$/,''))]={url:URL.createObjectURL(f),file:f});
+  const drafted=st.teams.flat(),miss=drafted.filter(ci=>!tokFiles[norm(cards[ci].name)]).map(ci=>cards[ci].name);
+  $('tokInfo').textContent=miss.length?`${drafted.length-miss.length}/${drafted.length} racers matched. Using card art for: ${miss.join(', ')}.`:`All ${drafted.length} drafted racers matched a token file.`;
+  renderTokens();
+};
+$('tokSize').oninput=e=>document.documentElement.style.setProperty('--tk',e.target.value+'px');
+$('lineSize').oninput=e=>document.documentElement.style.setProperty('--lw',e.target.value+'px');
+function zoom(url){$('zoom').innerHTML=`<img src="${url}" alt="">`;$('zoom').classList.remove('hide')}
+$('zoom').onclick=()=>$('zoom').classList.add('hide');
+$('playBtn').onclick=startGame;
+
+// ================= ONLINE (peer-to-peer via PeerJS) =================
+const NET={peer:null,conns:[],code:null,ver:{c:0,b:0,t:0},timer:null};
+const PEERJS_SRC='https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js';
+const qs=new URLSearchParams(location.search);
+function peerOpts(){ // ?peerhost=host:port lets you use your own PeerJS server
+  const h=qs.get('peerhost');if(!h)return {debug:1};
+  const [host,port]=h.split(':');return {host,port:+port||443,path:'/',secure:location.protocol==='https:'&&!/^(localhost|127\.)/.test(host),debug:1};
+}
+function loadPeer(){
+  return new Promise((ok,bad)=>{if(window.Peer)return ok();const sc=document.createElement('script');sc.src=qs.get('peerlib')||PEERJS_SRC;
+    sc.onload=ok;sc.onerror=()=>bad(new Error('Could not load the online library. Check your internet connection.'));document.head.append(sc);});
+}
+const randCode=()=>[...Array(5)].map(()=>'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'[Math.floor(Math.random()*32)]).join('');
+
+// ---------- HOST ----------
+function toggleRoom(){$('roomPanel').classList.toggle('hide');renderRoom()}
+function renderRoom(){
+  const b=$('roomBody');if(!b)return;
+  if(!NET.peer){
+    b.innerHTML=`<p class="muted" style="font-size:14px">Let friends join from their own browser: they pick their racers secretly, roll on their turn and move their own token. No download needed for them.</p>
+      ${location.protocol==='file:'?'<p style="font-size:13px;color:#ffb4b4">You opened this page from a file on your Mac. It still works, but send friends your GitHub Pages link plus the room code.</p>':''}
+      <button class="primary" id="startRoomBtn">Start online room</button>`;
+    $('startRoomBtn').onclick=startRoom;return;
+  }
+  if(!NET.code){b.innerHTML='<p class="muted">Connecting…</p>';return}
+  const link=location.protocol==='file:'?'':location.origin+location.pathname+'?join='+NET.code;
+  const seated=NET.conns.filter(c=>c.open);
+  b.innerHTML=`<div style="font-size:14px">Room code</div><div class="banner" style="font-size:34px;letter-spacing:4px;margin:2px 0 8px">${NET.code}</div>
+    ${link?`<input type="text" readonly id="roomLink" value="${esc(link)}"><p><button id="copyLinkBtn">Copy invite link</button> <span id="linkMsg" class="muted"></span></p>`:'<p class="muted" style="font-size:13px">Friends open your GitHub Pages link, tap “Join a game” and enter this code.</p>'}
+    <h3>Connected (${seated.length})</h3>
+    ${seated.length?seated.map(c=>`<div>• ${esc(c.pname||'Someone')} → <b>${c.seat!=null?esc(players[c.seat]||'?'):'choosing a seat…'}</b></div>`).join(''):'<div class="muted">Nobody yet.</div>'}
+    <p class="muted" style="font-size:12px">Keep this tab open: your browser is the game server. You can still do everything yourself.</p>`;
+  if(link)$('copyLinkBtn').onclick=async()=>{try{await navigator.clipboard.writeText(link);$('linkMsg').textContent='Copied!'}catch(e){$('roomLink').select();$('linkMsg').textContent='Press ⌘C'}};
+}
+async function startRoom(){
+  try{await loadPeer()}catch(e){$('roomBody').innerHTML=`<p style="color:#ffb4b4">${esc(e.message)}</p>`;return}
+  const code=randCode();
+  NET.peer=new Peer('alolan-athlete-'+code,peerOpts());renderRoom();
+  NET.peer.on('open',()=>{NET.code=code;renderRoom();$('roomBtn').textContent='🌐 Room '+code});
+  NET.peer.on('error',e=>{
+    if(e.type==='unavailable-id'){NET.peer.destroy();NET.peer=null;return startRoom()}
+    if(e.type==='peer-unavailable')return;
+    $('roomBody').insertAdjacentHTML('beforeend',`<p style="color:#ffb4b4;font-size:13px">Connection problem: ${esc(e.type||e.message)}</p>`);
+  });
+  NET.peer.on('disconnected',()=>{try{NET.peer.reconnect()}catch(e){}});
+  NET.peer.on('connection',c=>{
+    c.seat=null;
+    c.on('open',()=>{NET.conns.push(c);sendState(c);renderRoom()});
+    c.on('data',d=>onPlayerMsg(c,d));
+    c.on('close',()=>{NET.conns=NET.conns.filter(x=>x!==c);renderRoom();sync()});
+  });
+}
+function phase(){if(g)return'game';if(st&&!$('results').classList.contains('hide'))return'results';if(st)return'draft';return'setup'}
+function stateFor(c){
+  const s={t:'state',phase:phase(),players,ver:NET.ver,names:cards.map(x=>x.name),notes:NOTES,
+    seats:NET.conns.filter(x=>x.seat!=null&&x.open).map(x=>x.seat),you:c.seat};
+  if(st)s.draft={round:st.round,pool:st.pool,order:st.order,turn:st.turn,teams:st.teams,taken:st.taken};
+  if(g)s.game={race:g.race,used:g.used,revealed:g.revealed,ready:g.lineup.map(x=>x!=null),
+    lineup:g.revealed?g.lineup:null,mine:c.seat!=null?g.lineup[c.seat]:null,tokens:g.tokens,start:g.start,turn:g.turn,
+    scores:g.scores,log:g.log.slice(-8),boardIdx:boards.length?g.boardIdx:null,boardName:boards.length?boards[g.boardIdx].name:'',die:g.die||null,
+    hasTok:st?Object.fromEntries(st.teams.flat().map(ci=>[ci,!!tokFiles[norm(cards[ci].name)]])):{}};
+  return s;
+}
+function sendState(c){try{if(c.open)c.send(stateFor(c))}catch(e){}}
+function sync(){ // coalesce rapid changes (e.g. dragging) into ~20 updates/second
+  if(!NET.peer||NET.timer)return;
+  NET.timer=setTimeout(()=>{NET.timer=null;NET.conns.forEach(sendState)},50);
+}
+async function serveImg(c,key){
+  const [kind,ver,idx]=key.split('_');let o=null;
+  if(kind==='c'&&+ver===NET.ver.c)o=cards[+idx];
+  if(kind==='b'&&+ver===NET.ver.b)o=boards[+idx];
+  if(kind==='t'&&+ver===NET.ver.t&&cards[+idx])o=tokFiles[norm(cards[+idx].name)]||cards[+idx];
+  if(!o)return;
+  if(!o.file){if(o.src)try{c.send({t:'img',key,url:new URL(o.src,location.href).href})}catch(e){}return}
+  const buf=await o.file.arrayBuffer();try{c.send({t:'img',key,buf,mime:o.file.type||'image/png'})}catch(e){}
+}
+function onPlayerMsg(c,m){
+  if(!m||typeof m!=='object')return;
+  const seat=c.seat, myTurnGame=()=>g&&seat!=null&&turnOrder()[g.turn]===seat;
+  switch(m.t){
+    case 'hello':c.pname=String(m.name||'').slice(0,30);renderRoom();break;
+    case 'seat':{
+      const s=+m.seat;if(!(s>=0&&s<players.length))break;
+      if(NET.conns.some(x=>x!==c&&x.seat===s&&x.open))break;
+      c.seat=s;renderRoom();NET.conns.forEach(sendState);return;}
+    case 'img':serveImg(c,String(m.key));return;
+    case 'draftPick':
+      if(st&&!g&&seat!=null&&st.turn<st.order.length&&st.order[st.turn]===seat&&st.pool.includes(m.ci)&&st.taken[m.ci]===undefined)pick(m.ci);break;
+    case 'racePick':
+      if(g&&!g.revealed&&seat!=null&&st.teams[seat].includes(m.ci)&&!g.used[seat].includes(m.ci)){g.lineup[seat]=m.ci;renderGame()}break;
+    case 'move':{const t=g&&g.tokens[m.k];if(t&&t.p===seat){t.x=Math.min(100,Math.max(0,+m.x));t.y=Math.min(100,Math.max(0,+m.y));renderTokens()}break}
+    case 'faint':{const t=g&&g.tokens[m.k];if(t&&t.p===seat){t.faint=!t.faint;renderTokens()}break}
+    case 'roll':if(myTurnGame()&&g.revealed)doRoll();return;
+    case 'endTurn':if(myTurnGame()){g.turn=(g.turn+1)%players.length;renderGame()}return;
+  }
+  sync();
+}
+
+// ---------- PLAYER ----------
+const P={peer:null,conn:null,s:null,seat:null,imgs:{},pending:{},dragging:false,lastDie:0,name:''};
+const BLANK='data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==';
+function pImg(key){
+  if(P.imgs[key])return P.imgs[key];
+  if(!P.pending[key]&&P.conn&&P.conn.open){P.pending[key]=1;P.conn.send({t:'img',key})}
+  return BLANK;
+}
+const cKey=ci=>`c_${P.s.ver.c}_${ci}`, tKey=ci=>P.s.game&&P.s.game.hasTok[ci]?`t_${P.s.ver.t}_${ci}`:cKey(ci), bKey=i=>`b_${P.s.ver.b}_${i}`;
+function pSend(m){if(P.conn&&P.conn.open)P.conn.send(m)}
+function startPlayer(){
+  document.body.classList.add('player');
+  $('pApp').classList.remove('hide');
+  document.querySelector('body>header').classList.add('hide');document.querySelector('body>main').classList.add('hide');
+  $('pSize').oninput=e=>document.documentElement.style.setProperty('--lw',e.target.value+'px');
+  const saved=(()=>{try{return localStorage.getItem('aa_name')||''}catch(e){return''}})();
+  $('pMain').innerHTML=`<div class="panel" style="max-width:460px;margin:30px auto">
+    <h2 style="margin-top:0">Join a game</h2>
+    <p><label>Room code<br><input type="text" id="jCode" value="${esc((qs.get('join')||'').toUpperCase())}" maxlength="5" style="width:160px;font-size:22px;letter-spacing:3px;text-transform:uppercase"></label></p>
+    <p><label>Your name<br><input type="text" id="jName" value="${esc(saved)}" maxlength="30" style="width:240px"></label></p>
+    <button class="primary" id="jBtn">Join</button> <span id="jMsg" class="muted"></span></div>`;
+  $('jBtn').onclick=joinRoom;
+}
+async function joinRoom(){
+  const code=$('jCode').value.trim().toUpperCase();P.name=$('jName').value.trim()||'Player';
+  try{localStorage.setItem('aa_name',P.name)}catch(e){}
+  if(code.length<5){$('jMsg').textContent='Enter the 5-letter code.';return}
+  $('jMsg').textContent='Connecting…';$('jBtn').disabled=true;
+  try{await loadPeer()}catch(e){$('jMsg').textContent=e.message;$('jBtn').disabled=false;return}
+  P.peer=new Peer(peerOpts());
+  P.peer.on('error',e=>{$('jMsg')&&($('jMsg').textContent=e.type==='peer-unavailable'?'Room not found. Check the code, and that the host still has the page open.':'Connection problem: '+(e.type||e.message));$('jBtn')&&($('jBtn').disabled=false)});
+  P.peer.on('open',()=>{
+    const c=P.peer.connect('alolan-athlete-'+code,{reliable:true});P.conn=c;
+    c.on('open',()=>{c.send({t:'hello',name:P.name})});
+    c.on('data',onHostMsg);
+    c.on('close',()=>{$('pMain').insertAdjacentHTML('afterbegin','<div class="panel" style="border:2px solid #ff6b6b">Disconnected from the host. Reload this page to rejoin.</div>')});
+  });
+}
+function onHostMsg(m){
+  if(m.t==='img'){P.imgs[m.key]=m.url||URL.createObjectURL(new Blob([m.buf],{type:m.mime}));pRender();return}
+  if(m.t==='state'){P.s=m;P.seat=m.you;pRender()}
+}
+let pRaf=null;function pRender(){if(pRaf)return;pRaf=requestAnimationFrame(()=>{pRaf=null;pDraw()})}
+function pDraw(){
+  const s=P.s;if(!s)return;const M=$('pMain');
+  $('pWho').innerHTML=P.seat!=null?`You are <b style="color:${COLORS[P.seat]}">${esc(s.players[P.seat])}</b>`:'';
+  if(P.seat==null){
+    M.innerHTML=`<div class="panel" style="max-width:560px;margin:30px auto"><h2 style="margin-top:0">Which player are you?</h2>
+      <div class="seatBtns">${s.players.map((p,i)=>`<button data-seat="${i}" ${s.seats.includes(i)?'disabled':''} style="border-left:6px solid ${COLORS[i]}">${esc(p)}${s.seats.includes(i)?' (taken)':''}</button>`).join('')}</div>
+      <p class="muted" style="font-size:13px">Don't see your name? Ask the host to set the player names first.</p></div>`;
+    M.querySelectorAll('[data-seat]').forEach(b=>b.onclick=()=>pSend({t:'seat',seat:+b.dataset.seat}));return;
+  }
+  const me=P.seat;
+  $('pTabs').classList.remove('hide');
+  if(P.tab==='cards')return pCards(s);
+  P.gSig=null;
+  if(s.phase==='setup'){M.innerHTML='<div class="panel"><div class="banner">Waiting for the host to start the draft…</div></div>';return}
+  if(s.phase==='draft'||s.phase==='results'){
+    const d=s.draft,cur=d.turn<d.order.length?d.order[d.turn]:null,mine=s.phase==='draft'&&cur===me;
+    M.innerHTML=(s.phase==='draft'?`<div class="panel"><div class="banner">${mine?'<span>Your pick!</span> Tap a racer.':`Waiting for <span>${esc(s.players[cur])}</span> to pick…`}</div>
+      <div class="muted">Draft ${d.round} of 2 · pick ${d.turn+1} of ${d.order.length}</div>
+      <div class="order">${d.order.map((pi,k)=>`<span class="chip ${k<d.turn?'done':k===d.turn?'now':''}">${esc(s.players[pi])}</span>`).join('')}</div></div>
+      <div class="grid">${d.pool.map(ci=>{const t=d.taken[ci];return `<div class="card pcard ${t!==undefined?'taken':''} ${mine?'':'off'}" data-ci="${ci}"><img src="${pImg(cKey(ci))}" alt=""><div class="nm">${esc(s.names[ci])}</div>${t!==undefined?`<div class="who">${esc(s.players[t])}</div>`:''}</div>`}).join('')}</div>`
+      :'<div class="panel"><div class="banner">Draft complete! 🏁</div><p class="muted">Waiting for the host to start the game…</p></div>')+
+      `<h2>Teams</h2><div class="teams">${s.players.map((p,i)=>`<div class="panel team" style="${i===me?'outline:3px solid '+COLORS[i]:''}"><h3>${esc(p)}${i===me?' (you)':''}</h3><div class="mini">${[0,1,2,3].map(k=>d.teams[i][k]!==undefined?`<figure><img src="${pImg(cKey(d.teams[i][k]))}" alt=""><figcaption>${esc(s.names[d.teams[i][k]])}</figcaption></figure>`:'<div class="slot"></div>').join('')}</div></div>`).join('')}</div>`;
+    if(mine)M.querySelectorAll('.pcard:not(.taken)').forEach(el=>el.onclick=()=>pSend({t:'draftPick',ci:+el.dataset.ci}));
+    M.querySelectorAll('.card img,.mini img').forEach(im=>im.onclick=e=>{if(!mine){e.stopPropagation();zoom(im.src)}});
+    return;
+  }
+  // ----- game -----
+  const G=s.game,ord=[...Array(s.players.length)].map((_,k)=>(G.start+k)%s.players.length),curP=ord[G.turn],myTurn=curP===me&&G.race<=4;
+  const pts=POINTS[G.race-1];
+  if(P.dragging){pSide(s,G,ord,curP,myTurn,pts);return}
+  const unused=s.draft.teams[me].filter(ci=>!G.used[me].includes(ci));
+  M.innerHTML=`<div class="gwrap"><div>
+      <div class="lineup">${G.revealed&&G.lineup?G.lineup.map((ci,i)=>`<figure style="border-top:4px solid ${COLORS[i]}" data-z="${cKey(ci)}"><img src="${pImg(cKey(ci))}" alt=""><figcaption><b>${esc(s.players[i])}${i===me?' (you)':''}</b>${esc(s.names[ci])}${(s.notes||{})[s.names[ci]]?`<div class="lnote">📝 ${esc(s.notes[s.names[ci]])}</div>`:''}</figcaption></figure>`).join('')
+        :G.race>4?'':`<div class="panel" style="width:100%"><h3>${G.mine==null?'Choose your racer for Race '+G.race:'You picked '+esc(s.names[G.mine])+'. Tap another to change.'}</h3>
+          <div class="grid" style="--cw:var(--lw,150px)">${unused.map(ci=>`<div class="card pcard" data-pick="${ci}" style="${G.mine===ci?'outline:4px solid var(--pick)':''}"><img src="${pImg(cKey(ci))}" alt=""><div class="nm">${esc(s.names[ci])}</div></div>`).join('')}</div>
+          <div class="rdy">${s.players.map((p,i)=>`<span class="chip" style="border-left:5px solid ${COLORS[i]}">${esc(p)}: ${G.ready[i]?'✓ ready':'choosing…'}</span>`).join('')}</div>
+          <p class="muted" style="font-size:13px">Nobody else can see your pick until the host reveals everyone.</p></div>`}</div>
+      <div id="pBoard" style="position:relative;background:#0b1720;border-radius:12px;overflow:hidden;user-select:none;touch-action:none;min-height:200px">
+        ${G.boardIdx!=null?`<img src="${pImg(bKey(G.boardIdx))}" style="width:100%;display:block;pointer-events:none" alt="">`:'<div class="muted" style="padding:50px;text-align:center">Waiting for the host to load the board…</div>'}
+        <div id="pTok"></div></div>
+      <p class="muted" style="font-size:13px">Drag your own token to move it. Double-click it to faint or recover.</p>
+    </div><div class="side" id="pSide"></div></div>`;
+  M.querySelectorAll('[data-pick]').forEach(el=>el.onclick=()=>pSend({t:'racePick',ci:+el.dataset.pick}));
+  M.querySelectorAll('[data-z]').forEach(el=>el.onclick=()=>zoom(P.imgs[el.dataset.z]||BLANK));
+  pTokens(s,G);pSide(s,G,ord,curP,myTurn,pts);
+}
+function pTokens(s,G){
+  const L=$('pTok');if(!L)return;L.innerHTML='';
+  G.tokens.forEach((t,k)=>{
+    const d=document.createElement('div');d.className='tok'+(t.faint?' faint':'')+(t.p===P.seat?' mytok':'');
+    d.style.left=t.x+'%';d.style.top=t.y+'%';d.style.setProperty('--pc',COLORS[t.p]);
+    d.innerHTML=`<img src="${pImg(tKey(t.ci))}" alt="" draggable="false"><span>${esc(s.players[t.p])}</span>`;
+    if(t.p===P.seat){
+      d.ondblclick=()=>pSend({t:'faint',k});
+      d.onpointerdown=e=>{
+        e.preventDefault();d.setPointerCapture(e.pointerId);d.classList.add('drag');P.dragging=true;
+        const r=$('pBoard').getBoundingClientRect();let last=0;
+        d.onpointermove=ev=>{const x=Math.min(100,Math.max(0,(ev.clientX-r.left)/r.width*100)),y=Math.min(100,Math.max(0,(ev.clientY-r.top)/r.height*100));
+          d.style.left=x+'%';d.style.top=y+'%';const now=Date.now();if(now-last>50){last=now;pSend({t:'move',k,x,y})}d._x=x;d._y=y};
+        d.onpointerup=()=>{d.classList.remove('drag');d.onpointermove=null;d.onpointerup=null;P.dragging=false;if(d._x!=null)pSend({t:'move',k,x:d._x,y:d._y});pRender()};
+      };
+    } else d.style.cursor='default';
+    L.append(d);
+  });
+}
+function pSide(s,G,ord,curP,myTurn,pts){
+  const S=$('pSide');if(!S)return;
+  S.innerHTML=`<div class="panel"><div class="banner" style="font-size:22px;margin:0">${G.race<=4?`Race ${G.race} of 4`:'Game over'}</div><div class="muted">${esc(G.boardName||'')}</div></div>
+    <div class="panel"><h3>Turn</h3><div class="order">${ord.map((pi,k)=>`<span class="chip ${k===G.turn?'now':''}" style="${k===G.turn?'':'border-left:5px solid '+COLORS[pi]}">${esc(s.players[pi])}</span>`).join('')}</div>
+      ${myTurn&&G.revealed?'<p style="margin:8px 0 0;font-weight:700;color:var(--accent)">It\'s your turn!</p>':''}</div>
+    <div class="panel" style="text-align:center"><h3 style="text-align:left">D6</h3><div class="bigdie" id="pDie">${G.die?DIE[G.die.face-1]:'⚀'}</div>
+      <button class="primary" id="pRoll" ${myTurn&&G.revealed?'':'disabled'} style="font-size:18px;padding:10px 26px">Roll</button>
+      <button id="pEnd" ${myTurn&&G.revealed?'':'disabled'}>End my turn</button>
+      <div class="muted" style="text-align:left;margin-top:8px;font-size:13px">${G.log.slice().reverse().map(l=>`<div>${l}</div>`).join('')}</div></div>
+    <div class="panel"><h3>Points</h3><div class="rules-note">${pts?`<b>Race ${G.race}:</b> 🥇 1st = <b>${pts[0]}</b> · 🥈 2nd = <b>${pts[1]}</b> · ⚡ Z Crystal = <b>+1</b>`:'<b>Final scores</b>'}</div>
+      ${s.players.map((p,i)=>`<div class="score" style="--pc:${COLORS[i]}"><span class="pn"><span class="dot"></span>${esc(p)}${i===P.seat?' (you)':''}</span><b>${G.scores[i]}</b></div>`).join('')}</div>`;
+  const r=$('pRoll');if(r)r.onclick=()=>{r.disabled=true;pSend({t:'roll'})};
+  const e=$('pEnd');if(e)e.onclick=()=>{e.disabled=true;pSend({t:'endTurn'})};
+  if(G.die&&G.die.n!==P.lastDie){ // animate a new roll
+    const first=P.lastDie===0;P.lastDie=G.die.n;if(!first){let k=0;const f=G.die.face;const iv=setInterval(()=>{const el=$('pDie');if(!el)return clearInterval(iv);
+      el.textContent=++k>=8?DIE[f-1]:DIE[Math.floor(Math.random()*6)];if(k>=8)clearInterval(iv)},50)}
+  }
+}
+P.tab='game';
+$('pTabGame').onclick=()=>{P.tab='game';$('pTabGame').classList.add('on');$('pTabCards').classList.remove('on');pRender()};
+$('pTabCards').onclick=()=>{P.tab='cards';$('pTabCards').classList.add('on');$('pTabGame').classList.remove('on');P.gSig=null;pRender()};
+function pCards(s){
+  const G=s.game,S={teams:s.draft?s.draft.teams:null,used:G?G.used:null,lineup:G&&G.revealed?G.lineup:null,players:s.players,notes:s.notes||{}};
+  const M=$('pMain');
+  if(!$('pgGrid')){
+    M.innerHTML=`<div class="panel row"><input type="text" id="pgSearch" placeholder="Search name or note…" style="width:220px"><select id="pgFilter"></select><label class="muted">Size <input type="range" id="pgSize" min="120" max="360" value="190"></label><span id="pgCount" class="muted"></span></div><div class="ggrid" id="pgGrid"></div>`;
+    $('pgSearch').oninput=()=>{P.gSig=null;pCards(P.s)};$('pgFilter').onchange=()=>{P.gSig=null;pCards(P.s)};
+    $('pgSize').oninput=e=>document.documentElement.style.setProperty('--gw',e.target.value+'px');
+    $('pgFilter').innerHTML=galleryFilterOptions(S);
+  }
+  const sig=JSON.stringify([S.teams,S.used,S.lineup,S.notes,s.ver.c,$('pgFilter').value,$('pgSearch').value,Object.keys(P.imgs).length]);
+  if(sig===P.gSig)return;P.gSig=sig;
+  const list=galleryList(S,s.names,$('pgFilter').value,$('pgSearch').value);
+  $('pgCount').textContent=`${list.length} of ${s.names.length} cards`;
+  $('pgGrid').innerHTML=list.map(ci=>{const st2=cardStatus(ci,S),n=s.names[ci],note=S.notes[n];
+    return `<figure class="gcard"><img src="${pImg(cKey(ci))}" alt="" data-z="${cKey(ci)}"><figcaption><b>${esc(n)}</b><div>${badge(st2,S)}</div>${note?`<div class="gnote">📝 ${esc(note)}</div>`:''}</figcaption></figure>`}).join('');
+  $('pgGrid').querySelectorAll('[data-z]').forEach(im=>im.onclick=()=>zoom(P.imgs[im.dataset.z]||BLANK));
+}
+if(qs.has('join')||qs.has('play'))startPlayer();
+
+$('roomBtn').onclick=toggleRoom;
+// ================= HOSTED IMAGES (from the GitHub site) =================
+// Put images in folders next to index.html: cards/, tokens/, boards/  (file name = racer name)
+async function listHosted(folder){
+  const base=location.href.replace(/[?#].*$/,'').replace(/[^/]*$/,'');
+  // 1) optional assets.json manifest  2) GitHub API folder listing
+  if(!listHosted.man){listHosted.man=fetch(base+'assets.json',{cache:'no-store'}).then(r=>r.ok?r.json():null).catch(()=>null)}
+  const man=await listHosted.man;
+  if(man&&Array.isArray(man[folder]))return man[folder].map(n=>({name:n,src:base+folder+'/'+encodeURIComponent(n)}));
+  const m=location.hostname.match(/^([^.]+)\.github\.io$/i);if(!m)return [];
+  const repo=location.pathname.split('/').filter(Boolean)[0];
+  const api=repo?`https://api.github.com/repos/${m[1]}/${repo}/contents/${folder}`:`https://api.github.com/repos/${m[1]}/${m[1]}.github.io/contents/${folder}`;
+  try{const r=await fetch(api);if(!r.ok)return [];const j=await r.json();
+    return j.filter(x=>x.type==='file'&&/\.(png|jpe?g|webp|gif)$/i.test(x.name)).map(x=>({name:x.name,src:base+folder+'/'+encodeURIComponent(x.name)}));
+  }catch(e){return []}
+}
+const stripExt=n=>n.replace(/\.[^.]+$/,'');
+async function loadHosted(){
+  if(!/^https?:$/.test(location.protocol)||qs.has('join')||qs.has('play'))return;
+  const info=$('hostedInfo');info.textContent='Looking for images on this site…';
+  const [c,t,b]=await Promise.all(['cards','tokens','boards'].map(listHosted));
+  if(c.length&&!cards.length){
+    cards=c.map(x=>({name:stripExt(x.name).replace(/[_]+/g,' ').trim(),url:x.src,src:x.src,file:null})).sort((a,b)=>a.name.localeCompare(b.name));
+    NET.ver.c++;$('loaded').textContent=cards.length+' cards loaded from the site.';updateStart();
+  }
+  if(t.length){tokFiles={};t.forEach(x=>tokFiles[norm(stripExt(x.name))]={url:x.src,src:x.src,file:null});NET.ver.t++}
+  if(b.length){boards=b.sort((p,q)=>p.name.localeCompare(q.name,undefined,{numeric:true})).map(x=>({name:stripExt(x.name),url:x.src,src:x.src,file:null}));NET.ver.b++}
+  info.textContent=c.length||t.length||b.length?`From this site: ${c.length} cards, ${t.length} tokens, ${b.length} boards. You can still pick files manually to override.`:'';
+  $('tabCards').disabled=!cards.length;
+}
+
+// ================= CARDS TAB (gallery + notes) =================
+let NOTES={};try{NOTES=JSON.parse(localStorage.getItem('aa_notes')||'{}')}catch(e){}
+function saveNotes(){try{localStorage.setItem('aa_notes',JSON.stringify(NOTES))}catch(e){}}
+function cardStatus(ci,S){ // S: {teams,used,lineup,players}
+  let owner=-1;if(S.teams)S.teams.forEach((t,i)=>{if(t.includes(ci))owner=i});
+  const used=owner>=0&&S.used&&S.used[owner].includes(ci), racing=S.lineup&&S.lineup.includes(ci);
+  return {owner,used,racing};
+}
+function galleryFilterOptions(S,cur){
+  return `<option value="all">All cards</option><option value="drafted">Drafted</option><option value="racing">In this race</option><option value="noted">With notes</option>`+
+    (S.teams?S.players.map((p,i)=>`<option value="p${i}">${esc(p)}'s team</option>`).join(''):'');
+}
+function galleryList(S,names,filter,q){
+  q=(q||'').toLowerCase();
+  return names.map((n,ci)=>ci).filter(ci=>{
+    const s=cardStatus(ci,S);const n=names[ci];
+    if(q&&!n.toLowerCase().includes(q)&&!(NOTESsrc(S)[n]||'').toLowerCase().includes(q))return false;
+    if(filter==='drafted')return s.owner>=0; if(filter==='racing')return s.racing; if(filter==='noted')return !!(NOTESsrc(S)[n]||'').trim();
+    if(filter&&filter[0]==='p')return s.owner===+filter.slice(1);
+    return true;
+  });
+}
+function NOTESsrc(S){return S.notes||NOTES}
+function badge(s,S){
+  return (s.owner>=0?`<span class="chip" style="border-left:5px solid ${COLORS[s.owner]};font-size:12px">${esc(S.players[s.owner])}</span>`:'')+
+    (s.racing?'<span class="chip now" style="font-size:12px">racing</span>':'')+(s.used&&!s.racing?'<span class="chip done" style="font-size:12px">used</span>':'');
+}
+function hostS(){return {teams:st?st.teams:null,used:g?g.used:null,lineup:g&&g.revealed?g.lineup:null,players,notes:NOTES}}
+function renderCards(){
+  const S=hostS(),f=$('gFilter'),cur=f.value||'all';
+  f.innerHTML=galleryFilterOptions(S);f.value=[...f.options].some(o=>o.value===cur)?cur:'all';
+  const list=galleryList(S,cards.map(c=>c.name),f.value,$('gSearch').value);
+  $('gCount').textContent=`${list.length} of ${cards.length} cards`;
+  $('gGrid').innerHTML=list.map(ci=>{const c=cards[ci],s=cardStatus(ci,S);
+    return `<figure class="gcard"><img src="${c.url}" alt="" loading="lazy" data-z="${ci}"><figcaption><b>${esc(c.name)}</b><div>${badge(s,S)}</div>
+      <textarea data-n="${esc(c.name)}" placeholder="Notes… (e.g. copied Komala's ability)">${esc(NOTES[c.name]||'')}</textarea></figcaption></figure>`}).join('');
+  $('gGrid').querySelectorAll('[data-z]').forEach(im=>im.onclick=()=>zoom(cards[+im.dataset.z].url));
+  $('gGrid').querySelectorAll('textarea').forEach(ta=>ta.oninput=()=>{const n=ta.dataset.n;if(ta.value.trim())NOTES[n]=ta.value;else delete NOTES[n];saveNotes();sync()});
+}
+$('gSearch').oninput=renderCards;$('gFilter').onchange=renderCards;
+$('gSize').oninput=e=>document.documentElement.style.setProperty('--gw',e.target.value+'px');
+$('tabCards').onclick=()=>showTab('cards');
+
+loadHosted();
+$('startBtn').onclick=startDraft;
+renderNameInputs();
+</script>
+</body>
+</html>
